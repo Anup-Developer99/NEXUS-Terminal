@@ -1,23 +1,44 @@
 # NEXUS Terminal Architecture
 
-## Initial layers
+## Current alpha architecture
 
-- **Android UI (Kotlin):** application lifecycle and terminal-style interface.
-- **Terminal engine (planned):** session management, process lifecycle, input/output streams, resize handling, and terminal escape-sequence parsing.
-- **Native layer (C++):** future performance-sensitive components. The current C++ file is a placeholder.
-- **Environment integration (planned):** optional Linux userspace distribution managed inside app-private storage.
+- **Android UI (Kotlin):** terminal output, command input, and session controls.
+- **TerminalSession:** one `/system/bin/sh` process per session, with stdin/stdout handling.
+- **Session isolation:** sessions are separate shell processes. They share the app's Android UID and permission boundary; they are not security-isolated from one another.
+- **Native layer (C++):** placeholder foundation only. It is not currently part of command execution.
+- **Linux environment:** not included in this alpha.
 
-## Android security boundaries
+## Command execution
 
-Android apps run inside an application sandbox. NEXUS must not claim root access or unrestricted Linux compatibility on ordinary, non-rooted devices.
+Each session starts Android's `/system/bin/sh` through `ProcessBuilder`. Standard error is merged into standard output. Input is sent to the shell's stdin. The process runs as the application UID, with the app's permissions and filesystem access.
 
-Any future command runner must:
-- Run with the app's own Android UID and permissions.
-- Avoid silently invoking privileged operations.
+This is a line-oriented shell process, not a PTY. Interactive terminal programs, terminal resize, job control, and complete Ctrl+C behavior require a PTY implementation and terminal emulator.
+
+## Linux userspace distinction
+
+Android uses the Linux kernel, but its userspace differs from a typical GNU/Linux distribution. A complete optional Linux environment would need:
+- A supported ARM/ARM64 userspace root filesystem.
+- A compatible process translation layer such as proot, with its licensing and maintenance obligations reviewed.
+- Safe download, integrity verification, extraction, storage, and upgrade flows.
+- A userspace launcher that stays inside app-private storage.
+- Clear handling of architecture, storage, network, and Android-version compatibility.
+
+Those components are not bundled or claimed as implemented in 0.2.0-alpha.
+
+## Security boundaries
+
+- Run commands with the app's normal Android UID.
+- Do not silently invoke `su` or claim root access.
 - Keep process input/output and cancellation under app control.
-- Request Android storage access through supported APIs.
+- Keep downloaded environments in app-private storage unless the user explicitly exports files.
+- Verify downloaded archives before extraction and prevent path traversal during extraction.
 - Explain clearly when a command or feature is unavailable.
 
-## Current limitations
+## Known limitations
 
-The starter UI does not execute commands, create terminal sessions, install packages, or provide a Linux distribution. The C++ scaffold is not yet connected to the Android app through JNI or Gradle's CMake integration.
+- Uses `/system/bin/sh`, not a PTY.
+- No ANSI/VT screen parser.
+- No full-screen terminal application support.
+- No Linux distribution, proot, apt, or pkg.
+- No root access or unrestricted host filesystem access.
+- Sessions are closed when the activity is destroyed.

@@ -2,48 +2,60 @@
 
 An open-source Android terminal project built from the ground up.
 
-> **Status:** Early development scaffold. This repository contains an Android starter app and a native C++ placeholder. It is not yet a complete terminal emulator and does not currently execute commands.
+> **Current version:** 0.2.0-alpha  
+> **Status:** Early alpha. Android shell command execution and multiple shell sessions are implemented in the app source. A separate Linux userspace distribution is not yet included.
 
-## Goals
-- Terminal-style Android interface and multiple sessions
-- Controlled command execution and process lifecycle
-- Optional Linux userspace integration
-- User-controlled file access
-- Developer tools where Android permits them
-- Themes, keyboard shortcuts, and accessibility
-- Native C/C++ components
+## Features in 0.2.0-alpha
 
-## Technology
-- Kotlin and Android SDK
-- XML layouts
-- C++ and CMake for future native components
-- Gradle Kotlin DSL
+- Runs commands using Android's `/system/bin/sh`.
+- Streams standard output and standard error into the terminal view.
+- Supports up to eight independent shell sessions.
+- Create, switch between, and close sessions.
+- Each session keeps its own shell process and working directory.
+- Runs under the app's normal Android UID and sandbox.
+- Limits retained terminal output to avoid unbounded memory growth.
+
+Try basic commands such as `pwd`, `ls`, `id`, `uname -a`, `echo hello`, and `mkdir`.
+
+## Important: Android shell is not a Linux distribution
+
+This alpha uses Android's built-in shell. Android uses the Linux kernel, but that does **not** mean this app currently includes a conventional GNU/Linux userspace. It does not yet include Alpine/Debian root filesystems, `proot`, `apt`, or `pkg`. Commands and filesystem access are restricted by Android's app sandbox. Root access is not provided.
+
+Do not paste commands from unknown sources. Shell commands run with the app's own permissions and can modify files available to the app.
 
 ## Build
-1. Install Android Studio and a compatible Android SDK.
-2. Open this repository as an Android project.
-3. Allow Gradle sync to download dependencies.
-4. Select the `app` run configuration and build.
 
-Gradle wrapper properties are included. If wrapper scripts are absent from your clone, generate them with an installed Gradle distribution using `gradle wrapper`.
+1. Install Android Studio, JDK 17, and Android SDK Platform 35.
+2. Open this repository in Android Studio.
+3. Sync Gradle.
+4. Build and run the `app` configuration on an Android 8.0+ device.
 
-## Current functionality
-The starter screen accepts text and displays it in a terminal-like view. The command engine is not implemented yet.
+The GitHub Actions workflow builds the debug APK and uploads it as a workflow artifact.
+
+## Technology
+
+- Kotlin and Android SDK
+- Gradle Kotlin DSL
+- C++ / CMake foundation (not yet connected to the terminal process engine)
 
 ## Roadmap
-- [x] Initial Android project structure
-- [x] Kotlin activity and starter terminal screen
-- [x] Native C++ / CMake placeholder
-- [ ] Terminal sessions and process management
-- [ ] Command execution and output streaming
-- [ ] ANSI escape-sequence rendering
-- [ ] Session history and settings
-- [ ] Android storage integration
-- [ ] Optional Linux userspace
-- [ ] Automated tests and release builds
 
-## Security
-The app must respect Android's application sandbox, avoid silent privileged operations, and request access through supported Android APIs. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- [x] Initial Android project structure
+- [x] Android shell process execution
+- [x] Output and error stream display
+- [x] Multiple independent terminal sessions
+- [x] Session create, switch, and close controls
+- [ ] PTY-backed interactive terminal (Ctrl+C, full-screen apps, resize)
+- [ ] ANSI/VT escape-sequence terminal renderer
+- [ ] Linux userspace bootstrap and lifecycle management
+- [ ] Package manager integration for a supported userspace
+- [ ] Persistent session history and settings
+- [ ] Automated device tests and signed release pipeline
+
+## Security boundaries
+
+NEXUS does not silently request root or bypass Android's sandbox. Linux userspace integration must remain inside app-private storage and clearly disclose its limitations.
 
 ## License
+
 MIT. See [LICENSE](LICENSE).
